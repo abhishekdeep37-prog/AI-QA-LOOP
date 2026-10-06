@@ -2,7 +2,7 @@
   "meta": {
     "provider": "ollama",
     "model": "llama3.1:8b",
-    "generated_at": "2026-10-06T08:23:13+00:00",
+    "generated_at": "2026-10-06T10:27:27+00:00",
     "spec": "spec/requirements.md"
   },
   "stats": {
