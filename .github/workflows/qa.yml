@@ -1,0 +1,36 @@
+name: qa-loop
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "30 2 * * *"   # nightly, 08:00 IST
+
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m playwright install --with-deps chromium
+
+      # Unit tests for validation, patch handling and the release policy.
+      - run: python -m pytest tests -q
+
+      # Runs the COMMITTED scenarios (scenarios/generated.json). No LLM is needed in CI:
+      # generation and triage run locally with Ollama and the reviewed output is committed.
+      # Failed scenarios are retried once, so flaky ones are reported separately from real failures.
+      - name: Run scenario suite
+        if: hashFiles('scenarios/generated.json') != ''
+        run: python run_suite.py
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-results
+          path: results/run.json

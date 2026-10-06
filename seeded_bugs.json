@@ -1,0 +1,55 @@
+{
+  "_note": "Ground truth for the metrics report. The AI agents never read this file. 'fix' is the known-correct edit, used only to measure which failing scenarios each real bug explains.",
+  "bugs": [
+    {
+      "id": "B1",
+      "requirement": "R3",
+      "summary": "Negative transfer amounts are accepted (only zero is rejected), so money can be pulled from the receiver.",
+      "fix": {
+        "file": "app/server.py",
+        "old": "if not isinstance(amount, (int, float)) or amount == 0:",
+        "new": "if not isinstance(amount, (int, float)) or amount <= 0:"
+      }
+    },
+    {
+      "id": "B2",
+      "requirement": "R4",
+      "summary": "Insufficient-funds check ignores the fee, so a transfer can overdraw the sender.",
+      "fix": {
+        "file": "app/server.py",
+        "old": "if amount > accounts[sender][\"balance\"]:",
+        "new": "if amount + calc_fee(amount) > accounts[sender][\"balance\"]:"
+      }
+    },
+    {
+      "id": "B3",
+      "requirement": "R5",
+      "summary": "Fee boundary: a transfer of exactly 500 is not charged (uses > instead of >=).",
+      "fix": {
+        "file": "app/server.py",
+        "old": "if amount > FEE_THRESHOLD:",
+        "new": "if amount >= FEE_THRESHOLD:"
+      }
+    },
+    {
+      "id": "B4",
+      "requirement": "R6",
+      "summary": "Coupon single-use rule is never enforced; usage is recorded but not checked.",
+      "fix": {
+        "file": "app/server.py",
+        "old": "    state[\"coupons_used\"].add((user, code))\n    return None, round(total * (1 - rate), 2)",
+        "new": "    if (user, code) in state[\"coupons_used\"]:\n        return \"coupon_already_used\", None\n    state[\"coupons_used\"].add((user, code))\n    return None, round(total * (1 - rate), 2)"
+      }
+    },
+    {
+      "id": "B5",
+      "requirement": "R2",
+      "summary": "Account locks after 5 failed logins instead of 3.",
+      "fix": {
+        "file": "app/server.py",
+        "old": "MAX_FAILED_LOGINS = 5",
+        "new": "MAX_FAILED_LOGINS = 3"
+      }
+    }
+  ]
+}
