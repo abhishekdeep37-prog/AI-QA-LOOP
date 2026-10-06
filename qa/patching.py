@@ -62,7 +62,7 @@ def changed_line_count(before: str, after: str) -> int:
     return sum(max(i2 - i1, j2 - j1) for tag, i1, i2, j1, j2 in sm.get_opcodes() if tag != "equal")
 
 
-def verify_patch(app_dir, rel_file: str, old: str, new: str, scenarios, baseline, ui=True) -> dict:
+def verify_patch(app_dir, rel_file: str, old: str, new: str, scenarios, baseline, ui=True, baseline_steps=None) -> dict:
     """Apply the edit to a temporary copy of the app and rerun every scenario.
 
     `baseline` maps scenario id -> status from the unpatched run. The patch is
@@ -78,7 +78,17 @@ def verify_patch(app_dir, rel_file: str, old: str, new: str, scenarios, baseline
         with running_server(copy) as url:
             results = run_scenarios(scenarios, url, ui=ui)
     after = {r["id"]: r["status"] for r in results}
+    after_step = {r["id"]: r.get("failed_step_index") for r in results}
     fixed = sorted(i for i, s in baseline.items() if s == "failed" and after.get(i) == "passed")
     regressions = sorted(i for i, s in baseline.items() if s in {"passed", "flaky"} and after.get(i) == "failed")
     still_failing = sorted(i for i, s in after.items() if s == "failed")
-    return {"fixed": fixed, "regressions": regressions, "still_failing": still_failing}
+    # "progressed": the step that originally failed now passes (the scenario may still fail later on a
+    # different, unrelated problem). This is how a scenario that really found a bug is credited even
+    # when the model also wrote a bad step further down.
+    progressed = []
+    for i, st in (baseline_steps or {}).items():
+        if baseline.get(i) != "failed":
+            continue
+        if after.get(i) in {"passed", "flaky"} or (after.get(i) == "failed" and (after_step.get(i) or 0) > st):
+            progressed.append(i)
+    return {"fixed": fixed, "regressions": regressions, "still_failing": still_failing, "progressed": sorted(progressed)}

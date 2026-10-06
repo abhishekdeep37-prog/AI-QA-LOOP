@@ -12,6 +12,7 @@ import requests
 PROVIDER = os.environ.get("QA_LLM", "ollama").lower()
 MODEL = os.environ.get("QA_MODEL", "llama3.1:8b")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+TIMEOUT = int(os.environ.get("QA_TIMEOUT", "900"))
 
 
 class LLMError(RuntimeError):
@@ -22,7 +23,7 @@ def describe() -> dict:
     return {"provider": PROVIDER, "model": "stub" if PROVIDER == "stub" else MODEL}
 
 
-def chat_json(task: str, system: str, user: str, timeout: int = 300) -> dict:
+def chat_json(task: str, system: str, user: str, timeout: int = None) -> dict:
     """Ask for a JSON object. `task` is "generate" or "triage" (only the stub uses it)."""
     if PROVIDER == "stub":
         from qa import stubs
@@ -34,10 +35,12 @@ def chat_json(task: str, system: str, user: str, timeout: int = 300) -> dict:
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "stream": False,
         "format": "json",
-        "options": {"temperature": 0},
+        # Ollama defaults to a small context window and silently truncates the START of long prompts,
+        # which drops the instructions. Ask for a bigger one explicitly.
+        "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 2048},
     }
     try:
-        r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=timeout)
+        r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=timeout or TIMEOUT)
         r.raise_for_status()
     except requests.ConnectionError as e:
         raise LLMError(

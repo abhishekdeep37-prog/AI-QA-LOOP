@@ -103,3 +103,21 @@ def test_patch_that_fixes_nothing_is_blocked():
 def test_files_outside_the_allowlist_are_blocked():
     d = policy.evaluate(edit("a", "b", file=".github/workflows/qa.yml"), 0.9, OK_VERIFICATION, APP_SOURCE)
     assert d.tier == policy.BLOCK
+
+
+# ---- selector / mode validation (added after the first real run) ----------
+
+def ui_scenario(selector):
+    return {"id": "R7-x1", "requirement_id": "R7", "title": "t",
+            "steps": [{"type": "ui", "action": "goto", "value": "/"},
+                      {"type": "ui", "action": "click", "selector": selector}]}
+
+
+def test_hallucinated_selector_is_rejected():
+    assert validate_scenario(ui_scenario("[data-testid=login-submit]")) == []
+    assert validate_scenario(ui_scenario("#loginButton"))
+    assert validate_scenario(ui_scenario("[data-testid=amount-field]"))
+
+
+def test_ui_steps_rejected_when_requirement_is_api_only():
+    assert validate_scenario(ui_scenario("[data-testid=login-submit]"), allow_ui=False)

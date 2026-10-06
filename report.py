@@ -43,6 +43,7 @@ def main():
     if truth:
         caught = [b for b in truth["bugs"] if b["caught"]]
         m["bugs"] = {"seeded": len(seeded), "caught": len(caught),
+                     "caught_strict": sum(1 for b in truth["bugs"] if b.get("fully_fixed")),
                      "missed": [b["id"] for b in truth["bugs"] if not b["caught"]],
                      "false_positive_scenarios": truth["false_positive_scenarios"]}
         explained = {i for b in truth["bugs"] for i in b["caught_by"]}
@@ -79,7 +80,7 @@ def main():
               f"| Scenarios generated (valid / rejected) | {m['generation']['valid']} / {m['generation']['rejected']} (retries: {m['generation']['retries']}) |",
               f"| Suite result | {', '.join(f'{k}={v}' for k, v in m['suite'].items())} |"]
     if "seeded" in m["bugs"]:
-        lines += [f"| Seeded bugs caught | {m['bugs']['caught']} of {m['bugs']['seeded']} (missed: {', '.join(m['bugs']['missed']) or 'none'}) |",
+        lines += [f"| Seeded bugs caught | {m['bugs']['caught']} of {m['bugs']['seeded']} (missed: {', '.join(m['bugs']['missed']) or 'none'}); strict (whole scenario passes after fix): {m['bugs']['caught_strict']} of {m['bugs']['seeded']} |",
                   f"| False-positive scenarios (failing, no real bug) | {len(m['bugs']['false_positive_scenarios'])} {m['bugs']['false_positive_scenarios']} |"]
     else:
         lines.append(f"| Seeded bugs caught | {m['bugs']['note']} |")

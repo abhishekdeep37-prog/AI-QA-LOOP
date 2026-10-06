@@ -28,23 +28,38 @@ SYSTEM = (
     "requirement text, never from guesses about the implementation."
 )
 
-SCENARIO_FORMAT = """Scenario format (JSON):
+COMMON_RULES = """Rules:
+- Each scenario starts from the seed data (state is reset before every scenario).
+- "expect_json" only lists fields you are sure about; values are strings, numbers, booleans or null.
+- Every expected value must be stated in the requirement text above. Never invent selectors, endpoints or messages.
+- Ids must be unique and start with the requirement id. At most 4 scenarios, at most 5 steps each.
+- Cover the happy path, error cases, and boundary values (just below, exactly at, just above a limit)."""
+
+API_FORMAT = """Write API scenarios ONLY. Do not use ui steps.
+Scenario format (JSON):
 {"id": "R5-fee-boundary", "requirement_id": "R5", "title": "short description",
  "steps": [
   {"type": "api", "method": "POST", "path": "/api/transfer",
    "json": {"from": "alice", "to": "bob", "amount": 500},
-   "expect_status": 200, "expect_json": {"ok": true, "fee": 5.0}},
+   "expect_status": 200, "expect_json": {"ok": true, "fee": 5.0}}
+ ]}
+""" + COMMON_RULES
+
+UI_FORMAT = """Write browser (UI) scenarios. Each scenario starts with a goto step for "/".
+Allowed ui actions: goto, fill, click, expect_text. Allowed selectors are ONLY the data-testid names listed in the
+API overview, written like [data-testid=login-user]. Always click the submit button before expect_text.
+Scenario format (JSON):
+{"id": "R7-login-ok", "requirement_id": "R7", "title": "short description",
+ "steps": [
   {"type": "ui", "action": "goto", "value": "/"},
   {"type": "ui", "action": "fill", "selector": "[data-testid=login-user]", "value": "alice"},
+  {"type": "ui", "action": "fill", "selector": "[data-testid=login-pass]", "value": "pass123"},
   {"type": "ui", "action": "click", "selector": "[data-testid=login-submit]"},
   {"type": "ui", "action": "expect_text", "selector": "[data-testid=login-result]", "value": "Welcome alice"}
  ]}
-Rules:
-- Each scenario starts from the seed data (state is reset before every scenario).
-- "expect_json" only lists fields you are sure about; values are strings, numbers, booleans or null.
-- Use only the endpoints and data-testid names from the API overview. Ids must be unique and start with the requirement id.
-- Cover the happy path, error cases, and boundary values (just below, exactly at, just above a limit).
-- Write 3 to 5 scenarios."""
+""" + COMMON_RULES
+
+UI_REQUIREMENTS = {"R7"}
 
 
 def parse_spec(text: str) -> tuple:
@@ -60,15 +75,20 @@ def parse_spec(text: str) -> tuple:
     return overview, reqs
 
 
-def build_prompt(req_id: str, overview: str, requirement: str) -> str:
-    return f"REQUIREMENT_ID: {req_id}\n\n{overview}\n\n{requirement}\n\n{SCENARIO_FORMAT}\n"
+def build_prompt(req_id: str, overview: str, requirement: str, feedback=None) -> str:
+    fmt = UI_FORMAT if req_id in UI_REQUIREMENTS else API_FORMAT
+    prompt = f"REQUIREMENT_ID: {req_id}\n\n{overview}\n\n{requirement}\n\n{fmt}\n"
+    if feedback:
+        prompt += f"\nYour previous answer was rejected by the validator:\n{feedback}\nFix these problems and answer again.\n"
+    return prompt
 
 
 def generate_for(req_id, overview, requirement):
-    """Return (valid_scenarios, rejected, attempts_used, error_or_None)."""
-    prompt = build_prompt(req_id, overview, requirement)
-    last_error = None
+    """Return (valid_scenarios, rejected, attempts_used, error_or_None). Rejection reasons are never dropped."""
+    allow_ui = req_id in UI_REQUIREMENTS
+    feedback, last_error, last_rejected = None, None, []
     for attempt in range(1, MAX_ATTEMPTS + 1):
+        prompt = build_prompt(req_id, overview, requirement, feedback)
         try:
             reply = llm.chat_json("generate", SYSTEM, prompt)
         except llm.LLMError as e:
@@ -79,15 +99,19 @@ def generate_for(req_id, overview, requirement):
         raw = reply.get("scenarios")
         if not isinstance(raw, list):
             last_error = "reply had no 'scenarios' list"
+            feedback = last_error
             continue
         for s in raw:  # force the requirement id; models often mislabel it
             if isinstance(s, dict):
                 s["requirement_id"] = req_id
-        valid, rejected = validate_all(raw)
+        valid, rejected = validate_all(raw, allow_ui=allow_ui)
+        last_rejected = rejected
         if valid:
             return valid, rejected, attempt, None
         last_error = f"all {len(raw)} scenarios were invalid"
-    return [], [], MAX_ATTEMPTS, last_error
+        feedback = "\n".join(f"- {r['scenario'].get('id', '?') if isinstance(r['scenario'], dict) else '?'}: {'; '.join(r['errors'][:3])}"
+                             for r in rejected[:5])
+    return [], last_rejected, MAX_ATTEMPTS, last_error
 
 
 def main():
@@ -115,6 +139,8 @@ def main():
         all_rejected.extend(rejected)
         per_req[req_id] = {"valid": len(valid), "rejected": len(rejected), "attempts": attempts, "error": error}
         print(f"           valid={len(valid)} rejected={len(rejected)} attempts={attempts}" + (f" error={error}" if error else ""))
+        for r in rejected[:3]:
+            print(f"             rejected: {'; '.join(r['errors'][:2])}")
 
     doc = {
         "meta": {**llm.describe(), "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

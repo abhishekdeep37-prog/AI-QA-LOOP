@@ -32,7 +32,9 @@ SYSTEM = (
     "For a product_bug propose the smallest possible fix as {\"file\", \"old\", \"new\"}: `old` must be copied "
     "EXACTLY from the source (including indentation), must appear once, and `new` is its replacement. "
     "Reply with ONE JSON object: {\"classification\": ..., \"confidence\": 0..1, \"reasoning\": at most "
-    "3 sentences, \"edit\": {...} or null}. For test_bug or unknown, edit must be null."
+    "3 sentences, \"edit\": {...} or null}. For test_bug or unknown, edit must be null. "
+    "If the failing step uses an endpoint, selector, status code or message that the REQUIREMENT does not state, "
+    "or the test expects a value the requirement contradicts, it is a test_bug."
 )
 
 

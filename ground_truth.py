@@ -20,6 +20,7 @@ def main():
     run = json.loads((ROOT / "results" / "run.json").read_text())
     scenarios = json.loads((ROOT / "scenarios" / "generated.json").read_text())["scenarios"]
     baseline = {r["id"]: r["status"] for r in run["results"]}
+    baseline_steps = {r["id"]: r.get("failed_step_index") for r in run["results"] if r["status"] == "failed"}
     bugs = json.loads((ROOT / "seeded_bugs.json").read_text())["bugs"]
     ui = run["meta"].get("ui", True)
 
@@ -27,15 +28,20 @@ def main():
     for bug in bugs:
         print(f"[ground-truth] {bug['id']} ...", flush=True)
         fix = bug["fix"]
-        ver = patching.verify_patch(ROOT / "app", fix["file"], fix["old"], fix["new"], scenarios, baseline, ui=ui)
-        explained.update(ver["fixed"])
+        ver = patching.verify_patch(ROOT / "app", fix["file"], fix["old"], fix["new"], scenarios, baseline, ui=ui,
+                                    baseline_steps=baseline_steps)
+        explained.update(ver["progressed"])
         report.append({"id": bug["id"], "requirement": bug["requirement"], "summary": bug["summary"],
-                       "caught_by": ver["fixed"], "caught": bool(ver["fixed"])})
+                       "caught_by": ver["progressed"], "caught": bool(ver["progressed"]),
+                       "fully_fixed_by": ver["fixed"], "fully_fixed": bool(ver["fixed"])})
     failed = {i for i, s in baseline.items() if s == "failed"}
-    out = {"bugs": report, "false_positive_scenarios": sorted(failed - explained)}
+    out = {"bugs": report, "false_positive_scenarios": sorted(failed - explained),
+           "definition": "caught = a failing scenario's first failing step passes (or moves later) once the real fix is applied; "
+                         "strict = the whole scenario passes"}
     (ROOT / "results" / "ground_truth.json").write_text(json.dumps(out, indent=2) + "\n")
     for b in report:
-        print(f"  {b['id']} ({b['requirement']}): {'CAUGHT by ' + ', '.join(b['caught_by']) if b['caught'] else 'MISSED'}")
+        print(f"  {b['id']} ({b['requirement']}): {'CAUGHT by ' + ', '.join(b['caught_by']) if b['caught'] else 'MISSED'}"
+              f"   [strict, whole scenario passes after fix: {'yes' if b['fully_fixed'] else 'no'}]")
     print(f"  failing scenarios no real bug explains (false positives): {out['false_positive_scenarios']}")
 
 

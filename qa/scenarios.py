@@ -23,13 +23,17 @@ import re
 
 ALLOWED_METHODS = {"GET", "POST"}
 ALLOWED_UI_ACTIONS = {"goto", "fill", "click", "expect_text"}
-MAX_STEPS = 14
+MAX_STEPS = 8
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{2,60}$")
 REQ_RE = re.compile(r"^R\d+$")
 SCALARS = (str, int, float, bool, type(None))
+# Selectors that exist in the app (documented in spec/requirements.md). Anything else is a hallucination.
+KNOWN_TESTIDS = {"login-user", "login-pass", "login-submit", "login-result",
+                 "transfer-from", "transfer-to", "transfer-amount", "transfer-submit", "transfer-result"}
+SELECTOR_RE = re.compile(r"^\[data-testid=([A-Za-z-]+)\]$")
 
 
-def validate_scenario(s) -> list:
+def validate_scenario(s, allow_ui=True) -> list:
     """Return a list of problems; an empty list means the scenario is valid."""
     errors = []
     if not isinstance(s, dict):
@@ -47,17 +51,19 @@ def validate_scenario(s) -> list:
     if len(steps) > MAX_STEPS:
         errors.append(f"too many steps ({len(steps)} > {MAX_STEPS})")
     for i, step in enumerate(steps):
-        errors.extend(f"step {i}: {e}" for e in _validate_step(step))
+        errors.extend(f"step {i}: {e}" for e in _validate_step(step, allow_ui))
     return errors
 
 
-def _validate_step(step) -> list:
+def _validate_step(step, allow_ui=True) -> list:
     if not isinstance(step, dict):
         return ["not an object"]
     kind = step.get("type")
     if kind == "api":
         return _validate_api(step)
     if kind == "ui":
+        if not allow_ui:
+            return ["ui steps are not allowed for this requirement (use api steps)"]
         return _validate_ui(step)
     return [f"unknown type {kind!r}"]
 
@@ -85,8 +91,10 @@ def _validate_ui(step) -> list:
     action = step.get("action")
     if action not in ALLOWED_UI_ACTIONS:
         return [f"unknown ui action {action!r}"]
-    if action in {"fill", "click", "expect_text"} and not isinstance(step.get("selector"), str):
-        errors.append("selector required")
+    if action in {"fill", "click", "expect_text"}:
+        m = SELECTOR_RE.match(str(step.get("selector", "")))
+        if not m or m.group(1) not in KNOWN_TESTIDS:
+            errors.append(f"unknown selector {step.get('selector')!r}; use one of the data-testid names in the spec")
     if action in {"goto", "fill", "expect_text"} and not isinstance(step.get("value"), (str, int, float)):
         errors.append("value required")
     if action == "goto" and not str(step.get("value", "")).startswith("/"):
@@ -94,11 +102,11 @@ def _validate_ui(step) -> list:
     return errors
 
 
-def validate_all(scenarios) -> tuple:
+def validate_all(scenarios, allow_ui=True) -> tuple:
     """Split into (valid, rejected); rejected items are {"scenario", "errors"}. Duplicate ids are dropped."""
     valid, rejected, seen = [], [], set()
     for s in scenarios:
-        errs = validate_scenario(s)
+        errs = validate_scenario(s, allow_ui)
         if not errs and s["id"] in seen:
             errs = ["duplicate id"]
         if errs:

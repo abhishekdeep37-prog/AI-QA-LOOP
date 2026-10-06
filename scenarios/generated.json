@@ -1,0 +1,1352 @@
+{
+  "meta": {
+    "provider": "ollama",
+    "model": "llama3.1:8b",
+    "generated_at": "2026-10-06T08:23:13+00:00",
+    "spec": "spec/requirements.md"
+  },
+  "stats": {
+    "valid": 26,
+    "rejected": 2,
+    "per_requirement": {
+      "R1": {
+        "valid": 4,
+        "rejected": 0,
+        "attempts": 1,
+        "error": null
+      },
+      "R2": {
+        "valid": 4,
+        "rejected": 0,
+        "attempts": 1,
+        "error": null
+      },
+      "R3": {
+        "valid": 4,
+        "rejected": 0,
+        "attempts": 1,
+        "error": null
+      },
+      "R4": {
+        "valid": 4,
+        "rejected": 0,
+        "attempts": 1,
+        "error": null
+      },
+      "R5": {
+        "valid": 4,
+        "rejected": 0,
+        "attempts": 1,
+        "error": null
+      },
+      "R6": {
+        "valid": 4,
+        "rejected": 0,
+        "attempts": 1,
+        "error": null
+      },
+      "R7": {
+        "valid": 2,
+        "rejected": 2,
+        "attempts": 1,
+        "error": null
+      }
+    }
+  },
+  "rejected": [
+    {
+      "scenario": {
+        "id": "R7-transfer-ok",
+        "requirement_id": "R7",
+        "title": "Transfer money successfully",
+        "steps": [
+          {
+            "type": "ui",
+            "action": "goto",
+            "value": "/"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=login-user]",
+            "value": "alice"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=login-pass]",
+            "value": "pass123"
+          },
+          {
+            "type": "ui",
+            "action": "click",
+            "selector": "[data-testid=login-submit]"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=transfer-from]",
+            "value": "alice"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=transfer-to]",
+            "value": "bob"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=transfer-amount]",
+            "value": "100"
+          },
+          {
+            "type": "ui",
+            "action": "click",
+            "selector": "[data-testid=transfer-submit]"
+          },
+          {
+            "type": "ui",
+            "action": "expect_text",
+            "selector": "[data-testid=transfer-result]",
+            "value": "Transfer OK, fee 0.00"
+          }
+        ]
+      },
+      "errors": [
+        "too many steps (9 > 8)"
+      ]
+    },
+    {
+      "scenario": {
+        "id": "R7-transfer-fail",
+        "requirement_id": "R7",
+        "title": "Transfer money with invalid amount",
+        "steps": [
+          {
+            "type": "ui",
+            "action": "goto",
+            "value": "/"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=login-user]",
+            "value": "alice"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=login-pass]",
+            "value": "pass123"
+          },
+          {
+            "type": "ui",
+            "action": "click",
+            "selector": "[data-testid=login-submit]"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=transfer-from]",
+            "value": "alice"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=transfer-to]",
+            "value": "bob"
+          },
+          {
+            "type": "ui",
+            "action": "fill",
+            "selector": "[data-testid=transfer-amount]",
+            "value": "abc"
+          },
+          {
+            "type": "ui",
+            "action": "click",
+            "selector": "[data-testid=transfer-submit]"
+          },
+          {
+            "type": "ui",
+            "action": "expect_text",
+            "selector": "[data-testid=transfer-result]",
+            "value": "Error: invalid_credentials"
+          }
+        ]
+      },
+      "errors": [
+        "too many steps (9 > 8)"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "R1-1",
+      "requirement_id": "R1",
+      "title": "Login with correct credentials",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "user": null
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R1-2",
+      "requirement_id": "R1",
+      "title": "Login with wrong password",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "wrong"
+          },
+          "expect_status": 401,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_credentials"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R1-3",
+      "requirement_id": "R1",
+      "title": "Login with unknown user",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "unknown",
+            "password": "pass123"
+          },
+          "expect_status": 401,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_credentials"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R1-4",
+      "requirement_id": "R1",
+      "title": "Login with empty password",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": ""
+          },
+          "expect_status": 401,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_credentials"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R2-1",
+      "requirement_id": "R2",
+      "title": "Successful login",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "user": "alice"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R2-2",
+      "requirement_id": "R2",
+      "title": "Failed login",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "wrong"
+          },
+          "expect_status": 401,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_credentials"
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "wrong"
+          },
+          "expect_status": 401,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_credentials"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R2-3",
+      "requirement_id": "R2",
+      "title": "Account lockout",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "wrong"
+          },
+          "expect_status": 401,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_credentials"
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "wrong"
+          },
+          "expect_status": 401,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_credentials"
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "wrong"
+          },
+          "expect_status": 423,
+          "expect_json": {
+            "ok": false,
+            "error": "account_locked"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R2-4",
+      "requirement_id": "R2",
+      "title": "Successful login after lockout",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "user": "alice"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R3-amount-zero",
+      "requirement_id": "R3",
+      "title": "Zero amount transfer",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 0
+          },
+          "expect_status": 400,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_amount"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "balance": 1000.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "balance": 200.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "R3-amount-negative",
+      "requirement_id": "R3",
+      "title": "Negative amount transfer",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": -1
+          },
+          "expect_status": 400,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_amount"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "balance": 1000.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "balance": 200.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "R3-amount-non-numeric",
+      "requirement_id": "R3",
+      "title": "Non-numeric amount transfer",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": "abc"
+          },
+          "expect_status": 400,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_amount"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "balance": 1000.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "balance": 200.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "R3-amount-positive",
+      "requirement_id": "R3",
+      "title": "Positive amount transfer",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 1
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "fee": 0.1,
+            "from_balance": 999.9,
+            "to_balance": 200.1
+          }
+        }
+      ]
+    },
+    {
+      "id": "R4-1-transfer-with-sufficient-funds",
+      "requirement_id": "R4",
+      "title": "Transfer with sufficient funds",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 200
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "800.00"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": "400.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R4-2-transfer-with-insufficient-funds",
+      "requirement_id": "R4",
+      "title": "Transfer with insufficient funds",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 1000
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": "200.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R4-3-transfer-at-fee-boundary",
+      "requirement_id": "R4",
+      "title": "Transfer at fee boundary",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 995
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "5.00"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": "405.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R4-4-transfer-above-fee-boundary",
+      "requirement_id": "R4",
+      "title": "Transfer above fee boundary",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 1000.05
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": "1000.00"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": "200.00"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R5-fee-happy",
+      "requirement_id": "R5",
+      "title": "Transfer of 500 or more",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "user": "alice"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 1000.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": 200.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 500
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "fee": 5.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 950.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": 200.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "R5-fee-boundary",
+      "requirement_id": "R5",
+      "title": "Transfer of exactly 500",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "user": "alice"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 1000.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": 200.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 500
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "fee": 5.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 950.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": 200.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "R5-fee-above",
+      "requirement_id": "R5",
+      "title": "Transfer of more than 500",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "user": "alice"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 1000.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": 200.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 501
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "fee": 5.01
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 949.99
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": 200.01
+          }
+        }
+      ]
+    },
+    {
+      "id": "R5-fee-below",
+      "requirement_id": "R5",
+      "title": "Transfer of less than 500",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/login",
+          "json": {
+            "username": "alice",
+            "password": "pass123"
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "user": "alice"
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 1000.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": 200.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/transfer",
+          "json": {
+            "from": "alice",
+            "to": "bob",
+            "amount": 499
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "fee": 0.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 1000.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/bob",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "bob",
+            "balance": 399.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "R6-1-happy-path",
+      "requirement_id": "R6",
+      "title": "Coupon code SAVE10 gives 10% off the total",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/coupon",
+          "json": {
+            "user": "alice",
+            "code": "SAVE10",
+            "total": 100.0
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "discounted_total": 90.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "GET",
+          "path": "/api/accounts/alice",
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "name": "alice",
+            "balance": 90.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "R6-2-error-coupon-already-used",
+      "requirement_id": "R6",
+      "title": "Second attempt by the same user returns 409",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/coupon",
+          "json": {
+            "user": "alice",
+            "code": "SAVE10",
+            "total": 100.0
+          },
+          "expect_status": 200,
+          "expect_json": {
+            "ok": true,
+            "discounted_total": 90.0
+          }
+        },
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/coupon",
+          "json": {
+            "user": "alice",
+            "code": "SAVE10",
+            "total": 100.0
+          },
+          "expect_status": 409,
+          "expect_json": {
+            "ok": false,
+            "error": "coupon_already_used"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R6-3-error-invalid-coupon",
+      "requirement_id": "R6",
+      "title": "Unknown code returns 404",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/coupon",
+          "json": {
+            "user": "alice",
+            "code": "INVALID",
+            "total": 100.0
+          },
+          "expect_status": 404,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_coupon"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R6-4-error-invalid-total",
+      "requirement_id": "R6",
+      "title": "Total that is not a positive number returns 400",
+      "steps": [
+        {
+          "type": "api",
+          "method": "POST",
+          "path": "/api/coupon",
+          "json": {
+            "user": "alice",
+            "code": "SAVE10",
+            "total": -100.0
+          },
+          "expect_status": 400,
+          "expect_json": {
+            "ok": false,
+            "error": "invalid_total"
+          }
+        }
+      ]
+    },
+    {
+      "id": "R7-login-ok",
+      "requirement_id": "R7",
+      "title": "Login with valid credentials",
+      "steps": [
+        {
+          "type": "ui",
+          "action": "goto",
+          "value": "/"
+        },
+        {
+          "type": "ui",
+          "action": "fill",
+          "selector": "[data-testid=login-user]",
+          "value": "alice"
+        },
+        {
+          "type": "ui",
+          "action": "fill",
+          "selector": "[data-testid=login-pass]",
+          "value": "pass123"
+        },
+        {
+          "type": "ui",
+          "action": "click",
+          "selector": "[data-testid=login-submit]"
+        },
+        {
+          "type": "ui",
+          "action": "expect_text",
+          "selector": "[data-testid=login-result]",
+          "value": "Welcome alice"
+        }
+      ]
+    },
+    {
+      "id": "R7-login-fail",
+      "requirement_id": "R7",
+      "title": "Login with invalid credentials",
+      "steps": [
+        {
+          "type": "ui",
+          "action": "goto",
+          "value": "/"
+        },
+        {
+          "type": "ui",
+          "action": "fill",
+          "selector": "[data-testid=login-user]",
+          "value": "alice"
+        },
+        {
+          "type": "ui",
+          "action": "fill",
+          "selector": "[data-testid=login-pass]",
+          "value": "wrong"
+        },
+        {
+          "type": "ui",
+          "action": "click",
+          "selector": "[data-testid=login-submit]"
+        },
+        {
+          "type": "ui",
+          "action": "expect_text",
+          "selector": "[data-testid=login-result]",
+          "value": "Error: invalid_credentials"
+        }
+      ]
+    }
+  ]
+}
